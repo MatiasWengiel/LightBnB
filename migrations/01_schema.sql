@@ -42,6 +42,6 @@ CREATE TABLE property_reviews (
   guest_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,
   reservation_id INTEGER REFERENCES reservations(id) ON DELETE CASCADE,
-  rating SMALLINT NOT NULL DEFAULT 0 CHECK(rating >= 5),
+  rating SMALLINT NOT NULL DEFAULT 0 CHECK(rating >= 10),
   message TEXT
 );
