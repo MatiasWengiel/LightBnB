@@ -102,8 +102,15 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
-  return pool.query(`SELECT * from PROPERTIES LIMIT $1;`, [limit])
-  .then((result) => {return result.rows;
+  return pool.query(`SELECT properties.*, avg(rating)
+    FROM properties
+    JOIN property_reviews ON properties.id = property_reviews.property_id
+    WHERE properties.city = $1 AND cost_per_night >= $2 * 100 AND cost_per_night <= $3 * 100
+    GROUP BY properties.id
+    HAVING avg(rating) >= $4
+    LIMIT $5;`, [options.city, options.minimum_price_per_night, options.maximum_price_per_night, options.minimum_rating, limit])
+  .then((result) => {
+    return result.rows;
   })
   .catch((err) => {console.log(err.message);
   })
