@@ -1,25 +1,5 @@
-const { query } = require('./pglink');
-
-// Used for queries that return a single item (result.rows[0]). DRY up repeated query definitions
-const querySingleReturn = (queryString, queryParams) => {
-  return query(queryString, queryParams)
-  .then((result) => {
-    return result.rows.length > 0 ? result.rows[0] : null;
-  })
-  .catch((err) => {
-    console.log(err.message);
-  })
-}
-
-const queryMultipleReturns = (queryString, queryParams) => {
-  return query(queryString, queryParams)
-  .then((result) => {
-    return result.rows.length > 0 ? result.rows : null;
-  })
-  .catch((err) => {
-    console.log(err.message);
-  })
-}
+// const { query } = require('./pglink'); 
+const { queryMultipleReturns, querySingleReturn, whereOrAnd } = require('./queryBuilderFunctions')
 
 /// Users
 /**
@@ -28,9 +8,10 @@ const queryMultipleReturns = (queryString, queryParams) => {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function(email) {
-  return querySingleReturn(`SELECT * FROM users WHERE email = $1;`, [email.toLowerCase()])
 
+  return querySingleReturn(`SELECT * FROM users WHERE email = $1;`, [email.toLowerCase()])
 };
+
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -39,8 +20,8 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return querySingleReturn(`SELECT * FROM users WHERE id = $1`, [id])
 
+  return querySingleReturn(`SELECT * FROM users WHERE id = $1`, [id])
 };
 exports.getUserWithId = getUserWithId;
 
@@ -51,6 +32,7 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  function(user) {
+
   return querySingleReturn(`
     INSERT INTO users (name, email, password)
     VALUES ($1, $2, $3) RETURNING *;
@@ -66,6 +48,7 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
+
   return queryMultipleReturns(`
     SELECT properties.* 
     FROM properties
@@ -90,29 +73,21 @@ exports.getAllReservations = getAllReservations;
 const getAllProperties = function(options, limit = 10) {
   const queryParams = [];
 
+  //Start of the query
   let queryString = `
   SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
   JOIN property_reviews ON properties.id = property_id`;
 
-  //Determine if the first word in a query should be WHERE or AND
-  const whereOrAnd = (queryParams) => {
-    let queryString = '';
-    if (queryParams.length === 1) {
-      queryString += `WHERE `;
-    } else {
-      queryString += `AND `;
-    }
-    return queryString;
-  };
-  // If options includes a city, add it to the parameters and create a query that looks for the string in the city
+  // If options includes a city, add it to the parameters and add to the query language that looks for the given string in the city field
   if (options.city) {
     queryParams.push(`%${options.city}%`);
+
     queryString += `
   ${whereOrAnd(queryParams)} city LIKE $${queryParams.length}`;
   }
 
-  // If options includes a minimum price per night, add it to the parameters and create a query that compares properties against the minimum price
+  // If options includes a minimum price per night, add it to the parameters and add to the query language that compares properties against the minimum price
   if (options.minimum_price_per_night) {
     queryParams.push(`${options.minimum_price_per_night}`);
 
@@ -120,22 +95,22 @@ const getAllProperties = function(options, limit = 10) {
   ${whereOrAnd(queryParams)} cost_per_night >= $${queryParams.length} * 100`;
   }
 
-  // If options includes a maximum price per night, add it to the parameters and create a query that compares properties against the maximum price
+  // If options includes a maximum price per night, add it to the parameters and add to the query language that compares properties against the maximum price
   if (options.maximum_price_per_night) {
     queryParams.push(`${options.maximum_price_per_night}`);
 
     queryString += `
   ${whereOrAnd(queryParams)} cost_per_night <= $${queryParams.length} * 100`;
   }
-
+  //If options include an owner ID, add it to the parameters and add to the query language to return properties with that owner ID
   if (options.owner_id) {
     queryParams.push(`${options.owner_id}`);
 
     queryString += `
   ${whereOrAnd(queryParams)} owner_id = $${queryParams.length}`;
   }
-  // Add GROUP BY before possible aggregate functions
 
+  // Add GROUP BY before possible HAVING statement using aggregate functions
   queryString += `
   GROUP BY properties.id`;
 
@@ -150,6 +125,7 @@ const getAllProperties = function(options, limit = 10) {
 
   //Finish the query inserting the limit
   queryParams.push(limit);
+  
   queryString += `
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};
