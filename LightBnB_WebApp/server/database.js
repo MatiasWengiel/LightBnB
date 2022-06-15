@@ -84,7 +84,6 @@ const getAllReservations = function(guest_id, limit = 10) {
     LIMIT $2
   `, [guest_id, limit])
     .then((result => {
-      console.log(result.rows);
       return result.rows.length > 0 ? result.rows : null;
     }))
     .catch((err) => {
@@ -168,8 +167,6 @@ const getAllProperties = function(options, limit = 10) {
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};
 `;
-
-  console.log(queryString, queryParams);
 
   return pool.query(queryString, queryParams)
     .then((res => res.rows))
