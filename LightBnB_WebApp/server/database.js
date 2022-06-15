@@ -1,23 +1,35 @@
 const { query } = require('./pglink');
 
-/// Users
+// Used for queries that return a single item (result.rows[0]). DRY up repeated query definitions
+const querySingleReturn = (queryString, queryParams) => {
+  return query(queryString, queryParams)
+  .then((result) => {
+    return result.rows.length > 0 ? result.rows[0] : null;
+  })
+  .catch((err) => {
+    console.log(err.message);
+  })
+}
 
+const queryMultipleReturns = (queryString, queryParams) => {
+  return query(queryString, queryParams)
+  .then((result) => {
+    return result.rows.length > 0 ? result.rows : null;
+  })
+  .catch((err) => {
+    console.log(err.message);
+  })
+}
+
+/// Users
 /**
  * Get a single user from the database given their email.
  * @param {String} email The email of the user.
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function(email) {
-  const emailLowercase = email.toLowerCase();
-  
-  return query(`SELECT * FROM users WHERE email = $1;`, [emailLowercase])
-    .then((result) => {
-      return result.rows.length > 0 ? result.rows[0] : null;
-    
-    })
-    .catch((err) => {
-      console.log(err.message);
-    });
+  return querySingleReturn(`SELECT * FROM users WHERE email = $1;`, [email.toLowerCase()])
+
 };
 exports.getUserWithEmail = getUserWithEmail;
 
@@ -27,14 +39,8 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return query(`SELECT * FROM users WHERE id = $1`, [id])
-    .then((result) => {
-      return result.rows.length > 0 ? result.rows[0] : null;
-    
-    })
-    .catch((err) => {
-      console.log(err.message);
-    });
+  return querySingleReturn(`SELECT * FROM users WHERE id = $1`, [id])
+
 };
 exports.getUserWithId = getUserWithId;
 
@@ -45,16 +51,10 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  function(user) {
-  return query(`
+  return querySingleReturn(`
     INSERT INTO users (name, email, password)
     VALUES ($1, $2, $3) RETURNING *;
   `, [user.name, user.email.toLowerCase(), user.password])
-    .then((result) => {
-      return result.rows.length > 0 ? result.rows[0] : null;
-    })
-    .catch((err) => {
-      console.log(err.message);
-    });
 };
 exports.addUser = addUser;
 
@@ -66,7 +66,7 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return query(`
+  return queryMultipleReturns(`
     SELECT properties.* 
     FROM properties
     JOIN reservations ON reservations.property_id = properties.id
@@ -76,12 +76,6 @@ const getAllReservations = function(guest_id, limit = 10) {
     ORDER BY start_date
     LIMIT $2
   `, [guest_id, limit])
-    .then((result => {
-      return result.rows.length > 0 ? result.rows : null;
-    }))
-    .catch((err) => {
-      console.log(err.message);
-    });
 };
 exports.getAllReservations = getAllReservations;
 
@@ -161,10 +155,7 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
 `;
 
-  return query(queryString, queryParams)
-    .then((res => res.rows))
-    .catch((err) => console.log(err.message));
-
+  return queryMultipleReturns(queryString, queryParams)
 };
 exports.getAllProperties = getAllProperties;
 
@@ -178,14 +169,8 @@ const addProperty = function(property) {
   const queryParams = [];
   queryParams.push(property.owner_id, property.title, property.description, property.thumbnail_photo_url, property.cover_photo_url, property.cost_per_night, property.street, property.city, property.province, property.post_code, property.country, property.parking_spaces, property.number_of_bathrooms, property.number_of_bedrooms);
 
-  return query(`INSERT INTO properties (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms)
+  return querySingleReturn(`INSERT INTO properties (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
   RETURNING *;`, queryParams)
-    .then((result) => {
-      return result.rows.length > 0 ? result.rows[0] : null;
-    })
-    .catch((err) => {
-      console.log(err.message);
-    });
 };
 exports.addProperty = addProperty;
