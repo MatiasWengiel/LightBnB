@@ -1,5 +1,5 @@
-// const { query } = require('./pglink'); 
-const { queryMultipleReturns, querySingleReturn, whereOrAnd } = require('./queryBuilderFunctions')
+// const { query } = require('./pglink');
+const { queryMultipleReturns, querySingleReturn, whereOrAnd } = require('./queryBuilderFunctions');
 
 /// Users
 /**
@@ -9,7 +9,7 @@ const { queryMultipleReturns, querySingleReturn, whereOrAnd } = require('./query
  */
 const getUserWithEmail = function(email) {
 
-  return querySingleReturn(`SELECT * FROM users WHERE email = $1;`, [email.toLowerCase()])
+  return querySingleReturn(`SELECT * FROM users WHERE email = $1;`, [email.toLowerCase()]);
 };
 
 exports.getUserWithEmail = getUserWithEmail;
@@ -21,7 +21,7 @@ exports.getUserWithEmail = getUserWithEmail;
  */
 const getUserWithId = function(id) {
 
-  return querySingleReturn(`SELECT * FROM users WHERE id = $1`, [id])
+  return querySingleReturn(`SELECT * FROM users WHERE id = $1`, [id]);
 };
 exports.getUserWithId = getUserWithId;
 
@@ -36,7 +36,7 @@ const addUser =  function(user) {
   return querySingleReturn(`
     INSERT INTO users (name, email, password)
     VALUES ($1, $2, $3) RETURNING *;
-  `, [user.name, user.email.toLowerCase(), user.password])
+  `, [user.name, user.email.toLowerCase(), user.password]);
 };
 exports.addUser = addUser;
 
@@ -58,7 +58,7 @@ const getAllReservations = function(guest_id, limit = 10) {
     GROUP BY reservations.id, properties.id
     ORDER BY start_date
     LIMIT $2
-  `, [guest_id, limit])
+  `, [guest_id, limit]);
 };
 exports.getAllReservations = getAllReservations;
 
@@ -131,7 +131,7 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
 `;
 
-  return queryMultipleReturns(queryString, queryParams)
+  return queryMultipleReturns(queryString, queryParams);
 };
 exports.getAllProperties = getAllProperties;
 
@@ -147,6 +147,6 @@ const addProperty = function(property) {
 
   return querySingleReturn(`INSERT INTO properties (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-  RETURNING *;`, queryParams)
+  RETURNING *;`, queryParams);
 };
 exports.addProperty = addProperty;
