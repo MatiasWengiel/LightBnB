@@ -123,7 +123,7 @@ const getAllProperties = function(options, limit = 10) {
     queryParams.push(`${options.minimum_price_per_night}`);
 
     queryString += `
-  ${whereOrAnd(queryParams)} cost_per_night >= $${queryParams.length}`;
+  ${whereOrAnd(queryParams)} cost_per_night >= $${queryParams.length} * 100`;
   }
 
   // If options includes a maximum price per night, add it to the parameters and create a query that compares properties against the maximum price
@@ -131,7 +131,7 @@ const getAllProperties = function(options, limit = 10) {
     queryParams.push(`${options.maximum_price_per_night}`);
 
     queryString += `
-  ${whereOrAnd(queryParams)} cost_per_night <= $${queryParams.length}`;
+  ${whereOrAnd(queryParams)} cost_per_night <= $${queryParams.length} * 100`;
   }
 
   if (options.owner_id) {
